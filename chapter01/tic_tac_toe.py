@@ -1,3 +1,4 @@
+
 #######################################################################
 # Copyright (C)                                                       #
 # 2016 - 2018 Shangtong Zhang(zhangshangtong.cpp@gmail.com)           #
@@ -15,6 +16,7 @@ BOARD_ROWS = 3
 BOARD_COLS = 3
 BOARD_SIZE = BOARD_ROWS * BOARD_COLS
 
+# 一个判断当前棋盘的状态的类，主要包含数据，赢家是谁，哈希值，以及是否为重点
 class State:
     def __init__(self):
         # the board is represented by an n * n array,
@@ -27,6 +29,7 @@ class State:
         self.end = None
 
     # compute the hash value for one state, it's unique
+    # 给每一个棋盘都计算一个哈希值，这个哈希值时独一无二的。
     def hash(self):
         if self.hash_val is None:
             self.hash_val = 0
@@ -37,6 +40,7 @@ class State:
         return int(self.hash_val)
 
     # check whether a player has won the game, or it's a tie
+    # 判断是否到达终点。
     def is_end(self):
         if self.end is not None:
             return self.end
@@ -67,6 +71,7 @@ class State:
                 return self.end
 
         # whether it's a tie
+        # 判断是否为平局
         sum = np.sum(np.abs(self.data))
         if sum == BOARD_ROWS * BOARD_COLS:
             self.winner = 0
@@ -79,6 +84,7 @@ class State:
 
     # @symbol: 1 or -1
     # put chessman symbol in position (i, j)
+    # 根据位置以及symbol来设定
     def next_state(self, i, j, symbol):
         new_state = State()
         new_state.data = np.copy(self.data)
@@ -111,6 +117,7 @@ def get_all_states_impl(current_state, current_symbol, all_states):
                     isEnd = newState.is_end()
                     all_states[newHash] = (newState, isEnd)
                     if not isEnd:
+                        # 用递归的方式，获取所有的state，这里特地做了假设，第一个下棋的人的symbol为1，第二个为-1
                         get_all_states_impl(newState, -current_symbol, all_states)
 
 def get_all_states():
@@ -158,6 +165,7 @@ class Judger:
             player = next(alternator)
             if print:
                 current_state.print()
+            # 每一个player产生自己的 action
             [i, j, symbol] = player.act()
             next_state_hash = current_state.next_state(i, j, symbol).hash()
             current_state, is_end = all_states[next_state_hash]
@@ -213,10 +221,12 @@ class Player:
 
         for i in reversed(range(len(self.states) - 1)):
             state = self.states[i]
+            # 更新estimations
             td_error = self.greedy[i] * (self.estimations[self.states[i + 1]] - self.estimations[state])
             self.estimations[state] += self.step_size * td_error
 
     # choose an action based on the state
+    # 根据前面学习到的
     def act(self):
         state = self.states[-1]
         next_states = []
@@ -290,7 +300,7 @@ def train(epochs):
     player1_win = 0.0
     player2_win = 0.0
     for i in range(1, epochs + 1):
-        winner = judger.play(print=False)
+        winner = judger.play(print=True)
         if winner == 1:
             player1_win += 1
         if winner == -1:
