@@ -51,11 +51,14 @@ class Bandit:
         self.best_action = np.argmax(self.q_true)
 
     # get an action for this bandit
+    # 根据不同的方法选择赌博摇臂机
     def act(self):
+        # 当概率小于epslion的时候，我们随机选择一个。
         if np.random.rand() < self.epsilon:
             return np.random.choice(self.indices)
 
         if self.UCB_param is not None:
+            # 选择UCB来进行选择当前的action。 公式2.8
             UCB_estimation = self.q_estimation + \
                      self.UCB_param * np.sqrt(np.log(self.time + 1) / (self.action_count + 1e-5))
             q_best = np.max(UCB_estimation)
@@ -78,8 +81,10 @@ class Bandit:
 
         if self.sample_averages:
             # update estimation using sample averages
+            # 这里的更新方式为公式2.3
             self.q_estimation[action] += 1.0 / self.action_count[action] * (reward - self.q_estimation[action])
         elif self.gradient:
+            # 公式2.10来对q_estimation进行更新
             one_hot = np.zeros(self.k)
             one_hot[action] = 1
             if self.gradient_baseline:
@@ -89,6 +94,7 @@ class Bandit:
             self.q_estimation = self.q_estimation + self.step_size * (reward - baseline) * (one_hot - self.action_prob)
         else:
             # update estimation with constant step size
+            # 用公式2.4来进行更新
             self.q_estimation[action] += self.step_size * (reward - self.q_estimation[action])
         return reward
 
@@ -108,6 +114,7 @@ def simulate(runs, time, bandits):
     rewards = rewards.mean(axis=1)
     return best_action_counts, rewards
 
+# 在赌博摇臂老虎机里面，每一个reward的分布。
 def figure_2_1():
     plt.violinplot(dataset=np.random.randn(200,10) + np.random.randn(10))
     plt.xlabel("Action")
@@ -115,6 +122,7 @@ def figure_2_1():
     plt.savefig('../images/figure_2_1.png')
     plt.close()
 
+# 在不同的epsilon的情况下，曲线分布。
 def figure_2_2(runs=2000, time=1000):
     epsilons = [0, 0.1, 0.01]
     bandits = [Bandit(epsilon=eps, sample_averages=True) for eps in epsilons]
@@ -139,6 +147,7 @@ def figure_2_2(runs=2000, time=1000):
     plt.savefig('../images/figure_2_2.png')
     plt.close()
 
+# 不同的初始化方法
 def figure_2_3(runs=2000, time=1000):
     bandits = []
     bandits.append(Bandit(epsilon=0, initial=5, step_size=0.1))
@@ -154,6 +163,7 @@ def figure_2_3(runs=2000, time=1000):
     plt.savefig('../images/figure_2_3.png')
     plt.close()
 
+# 比较是否使用UCB 以及 贪心的方法。
 def figure_2_4(runs=2000, time=1000):
     bandits = []
     bandits.append(Bandit(epsilon=0, UCB_param=2, sample_averages=True))
